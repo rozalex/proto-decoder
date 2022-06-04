@@ -52,15 +52,15 @@ function App() {
           disablePortal
           onChange={(event, value) => {setDecoder(value)}}
           options={filterOptions}
-          sx={{ width: 300 }}
+          sx={{ width: "50vw" }}
           renderInput={(params) => <TextField {...params} label="Decoder" />}
         />
         <TextareaAutosize
           onChange={ev => setEncodedText(ev.target.value)}
           value={encodedText}
-          style={{ width: 600, height: 300, marginTop: 5 }}
+          style={{ width: "50vw", height: "50vh", marginTop: 5 }}
         />
-      <Button width={"100px"} variant="contained" onClick={decodeText}>Decode</Button>
+      <Button width={"10vw"} variant="contained" onClick={decodeText}>Decode</Button>
       <div className="alert">
         <Snackbar open={alertState} autoHideDuration={4000} onClose={() => {setAlertState(false)}}>
           <Alert severity={alertType}>{alertText}</Alert>

@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/proto-decoder/static/css/main.abe1b001.css",
+    "main.js": "/proto-decoder/static/js/main.52620985.js",
+    "static/js/787.66f3d5d7.chunk.js": "/proto-decoder/static/js/787.66f3d5d7.chunk.js",
+    "index.html": "/proto-decoder/index.html",
+    "main.abe1b001.css.map": "/proto-decoder/static/css/main.abe1b001.css.map",
+    "main.52620985.js.map": "/proto-decoder/static/js/main.52620985.js.map",
+    "787.66f3d5d7.chunk.js.map": "/proto-decoder/static/js/787.66f3d5d7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.abe1b001.css",
+    "static/js/main.52620985.js"
+  ]
+}

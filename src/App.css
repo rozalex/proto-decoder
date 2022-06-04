@@ -1,0 +1,7 @@
+.App {
+  display: flex;
+  margin-top: 50px;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: center;
+}

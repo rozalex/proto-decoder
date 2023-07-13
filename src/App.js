@@ -6,10 +6,10 @@ import TextareaAutosize from '@mui/material/TextareaAutosize';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import Stack from '@mui/material/Stack';
 import Snackbar from '@mui/material/Snackbar';
-import MuiAlert, { AlertProps } from '@mui/material/Alert';
+import MuiAlert from '@mui/material/Alert';
 import {priority} from '@prioritysoftware/priority-proto-api/lib/nform';
+import { JSONTree } from 'react-json-tree';
 
 const filterOptions = [];
 const form = priority.netitems.form;
@@ -28,6 +28,14 @@ function App() {
   const [alertState, setAlertState] = useState(false);
   const [alertText, setAlertText] = useState(false);
   const [alertType, setAlertType] = useState(false);
+  const [json, setJSON] = useState();
+
+  const selectText = (containerid) => {
+    const range = document.createRange();
+    range.selectNode(document.getElementById(containerid));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  }
 
   const decodeText = () => {
     try {
@@ -36,8 +44,9 @@ function App() {
       const text = decoder.decode(buf64);
       console.log(text);
 
+      setJSON(text);
       setAlertType("success");
-      setAlertText("Decoded successfully, check console for result");
+      setAlertText("Decoded successfully");
     } catch(err) {
       setAlertType("error");
       setAlertText("Error decoding, make sure you have selected a correct decoder");
@@ -52,22 +61,31 @@ function App() {
           disablePortal
           onChange={(event, value) => {setDecoder(value)}}
           options={filterOptions}
-          sx={{ width: "50vw" }}
+          sx={{ width: "80vw" }}
           renderInput={(params) => <TextField {...params} label="Decoder" />}
         />
-        <TextareaAutosize
-          onChange={ev => setEncodedText(ev.target.value)}
-          value={encodedText}
-          style={{ width: "50vw", height: "50vh", marginTop: 5 }}
-        />
-      <Button width={"10vw"} variant="contained" onClick={decodeText}>Decode</Button>
-      <div className="alert">
-        <Snackbar open={alertState} autoHideDuration={4000} onClose={() => {setAlertState(false)}}>
-          <Alert severity={alertType}>{alertText}</Alert>
-        </Snackbar>
-      </div>
+        <div className="wrap">
+          <TextareaAutosize
+            onChange={ev => setEncodedText(ev.target.value)}
+            value={encodedText}
+            style={{ width: "40vw", height: "50vh"}}
+          />
+          <div className="result">
+            <pre id="preelement">{JSON.stringify(json, null, 2) }</pre>
+          </div>
+        </div>
+        <Button width={"10vw"} variant="contained" onClick={decodeText}>Decode</Button>
+
+        <div className="tree">
+          {json && <JSONTree data={json} />}
+        </div>
+        <div className="alert">
+          <Snackbar open={alertState} autoHideDuration={1000} onClose={() => {setAlertState(false)}}>
+            <Alert severity={alertType}>{alertText}</Alert>
+          </Snackbar>
+        </div>
     </div>
-  );
+  )
 }
 
 export default App;

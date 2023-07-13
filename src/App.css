@@ -10,3 +10,16 @@
   position: absolute;
   bottom: 0;
 }
+
+.wrap {
+  display: flex;
+}
+
+.result {
+  width:39vw;
+  max-width: 39vw;
+  height: 50vh;
+  background: white;
+  border: 1px solid black;
+  overflow: auto;
+}

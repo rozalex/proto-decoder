@@ -9,7 +9,7 @@ import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
 import { util } from 'protobufjs';
 import { JSONTree } from 'react-json-tree';
-import { priority } from '@prioritysoftware/priority-proto-api/lib/nform';
+import { priority } from '@priority-software/priority-proto-api/lib/nform';
 
 const form = priority.netitems.form;
 const ngtw = priority.netitems.ngtw;

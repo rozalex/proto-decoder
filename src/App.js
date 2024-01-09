@@ -13,7 +13,9 @@ import { priority } from '@priority-software/priority-proto-api/lib/nform';
 
 const form = priority.netitems.form;
 const ngtw = priority.netitems.ngtw;
+const version  = "1.0.62";
 
+console.log(version);
 const filterOptions = Object.entries({ ...form, ...ngtw }).map(([key, value]) => ({
   label: key,
   decode: value.decode

@@ -1,0 +1,278 @@
+{
+  "NFormStart": {
+    "request": "StartRq",
+    "response": "StartRs"
+  },
+  "NFormRecordZoom": {
+    "request": "RecordZoomRq",
+    "response": "RecordZoomRs"
+  },
+  "NFormHtmlUnlock": {
+    "request": "HtmlUnlockRq",
+    "response": "HtmlUnlockRs"
+  },
+  "NFormHtmlFetch": {
+    "request": "HtmlFetchRq",
+    "response": "HtmlFetchRs"
+  },
+  "NFormHtmlSave": {
+    "request": "HtmlSaveRq",
+    "response": "HtmlSaveRs"
+  },
+  "NFormHtmlSignature": {
+    "request": "HtmlSignatureRq",
+    "response": "HtmlSignatureRs"
+  },
+  "NFormRecordColors": {
+    "request": "RecordColorsRq",
+    "response": "RecordColorsRs"
+  },
+  "NFormOlaps": {
+    "request": "OlapsRq",
+    "response": "OlapsRs"
+  },
+  "NFormAction": {
+    "request": "ActionRq",
+    "response": "ActionRs"
+  },
+  "NFormActionEnd": {
+    "request": "ActionEndRq",
+    "response": "ActionEndRs"
+  },
+  "NFormActions": {
+    "request": "ActionsRq",
+    "response": "ActionsRs"
+  },
+  "NFormStatuses": {
+    "request": "StatusesRq",
+    "response": "StatusesRs"
+  },
+  "NFormSubform": {
+    "request": "SubformRq",
+    "response": "StartRs"
+  },
+  "NFormSubforms": {
+    "request": "SubformsRq",
+    "response": "SubformsRs"
+  },
+  "NFormEnd": {
+    "request": "EndRq",
+    "response": "EndRs"
+  },
+  "NFormFieldUndo": {
+    "request": "FieldUndoRq",
+    "response": "FieldUndoRs"
+  },
+  "NFormRecordUndo": {
+    "request": "RecordUndoRq",
+    "response": "RecordUndoRs"
+  },
+  "NFormWarningApprove": {
+    "request": "WarningApproveRq",
+    "response": "WarningApproveRs"
+  },
+  "NFormRecordDelete": {
+    "request": "RecordDeleteRq",
+    "response": "RecordDeleteRs"
+  },
+  "NFormRecordSave": {
+    "request": "RecordSaveRq",
+    "response": "RecordSaveRs"
+  },
+  "NFormFieldUpdate": {
+    "request": "FieldUpdateRq",
+    "response": "FieldUpdateRs"
+  },
+  "NFormFieldSelect": {
+    "request": "FieldSelectRq",
+    "response": "FieldSelectRs"
+  },
+  "NFormRecordEdit": {
+    "request": "RecordEditRq",
+    "response": "RecordEditRs"
+  },
+  "NFormHelp": {
+    "request": "HelpRq",
+    "response": "HelpRs"
+  },
+  "NFormFetch": {
+    "request": "FetchRq",
+    "response": "FetchRs"
+  },
+  "NFormColumns": {
+    "request": "ColumnsRq",
+    "response": "ColumnsRs"
+  },
+  "NFormBatch": {
+    "request": "BatchRq",
+    "response": "BatchRs"
+  },
+  "NGtwDataStoreSet": {
+    "request": "DataStoreSetRq",
+    "response": "DataStoreSetRs"
+  },
+  "NGtwDataStoreGet": {
+    "request": "DataStoreGetRq",
+    "response": "DataStoreGetRs"
+  },
+  "NGtwGeneralAbout": {
+    "request": "GeneralAboutRq",
+    "response": "GeneralAboutRs"
+  },
+  "NFormSystemConstants": {
+    "request": "SystemConstantsRq",
+    "response": "SystemConstantsRs"
+  },
+  "NGenWhoAmI": {
+    "request": "WhoAmIRq",
+    "response": "WhoAmIRs"
+  },
+  "NGenCheckModule": {
+    "request": "CheckModuleRq",
+    "response": "CheckModuleRs"
+  },
+  "NGenCheckModules": {
+    "request": "CheckModulesRq",
+    "response": "CheckModulesRs"
+  },
+  "NGenLinks": {
+    "request": "LinkRq",
+    "response": "LinkRs"
+  },
+  "NFormCountFetch": {
+    "request": "CountFetchRq",
+    "response": "CountFetchRs"
+  },
+  "NFormSumFetch": {
+    "request": "SumFetchRq",
+    "response": "SumFetchRs"
+  },
+  "NFormExportToExcel": {
+    "request": "FormToExcelRq",
+    "response": "FormToExcelRs"
+  },
+  "NFormExcelTemplates": {
+    "request": "ExcelTemplatesRq",
+    "response": "ExcelTemplatesRs"
+  },
+  "NFormAlertList": {
+    "request": "AlertListRq",
+    "response": "AlertListRs"
+  },
+  "NFormAlertChooses": {
+    "request": "AlertChoosesRq",
+    "response": "AlertChoosesRs"
+  },
+  "NFormTableViewColumnsDesign": {
+    "request": "TableViewColumnsDesignRq",
+    "response": "TableViewColumnsDesignRs"
+  },
+  "NFormAlertSave": {
+    "request": "AlertSaveRq",
+    "response": "AlertListRs"
+  },
+  "NFormAlertDelete": {
+    "request": "AlertDeleteRq",
+    "response": "EmptyRs"
+  },
+  "NFormAlertChoose": {
+    "request": "AlertChooseRq",
+    "response": "FieldSelectRs"
+  },
+  "NFormRowViewColumnsDesign": {
+    "request": "RowViewColumnsDesignRq",
+    "response": "RowViewColumnsDesignRs"
+  },
+  "NFormSaveRowViewColumnsDesign": {
+    "request": "SaveRowViewColumnsDesignRq",
+    "response": "SaveRowViewColumnsDesignRs"
+  },
+  "NFormAlertOrder": {
+    "request": "AlertOrderRq",
+    "response": "EmptyRs"
+  },
+  "NFormReportCancel": {
+    "request": "ReportCancelRq",
+    "response": "ReportCancelRs"
+  },
+  "NFormAlertCheckExpr": {
+    "request": "AlertCheckExprRq",
+    "response": "AlertCheckExprRs"
+  },
+  "NFormRestoreDefaultDesign": {
+    "request": "RestoreDefaultDesignRq",
+    "response": "RestoreDefaultDesignRs"
+  },
+  "NFormSubformsDesign": {
+    "request": "SubformsDesignRq",
+    "response": "SubformsDesignRs"
+  },
+  "NFormSaveSubformsDesign": {
+    "request": "SaveSubformsDesignRq",
+    "response": "SaveSubformsDesignRs"
+  },
+  "NFormActionsDesign": {
+    "request": "ActionsDesignRq",
+    "response": "ActionsDesignRs"
+  },
+  "NFormSaveActionsDesign": {
+    "request": "SaveActionsDesignRq",
+    "response": "SaveActionsDesignRs"
+  },
+  "NFormSaveTableViewColumnsDesign": {
+    "request": "SaveTableViewColumnsDesignRq",
+    "response": "SaveTableViewColumnsDesignRs"
+  },
+  "NFormStartMultiPartUpload": {
+    "request": "StartMultiPartUploadRq",
+    "response": "StartMultiPartUploadRs"
+  },
+  "NFormUploadPart": {
+    "request": "UploadPartRq",
+    "response": "UploadPartRs"
+  },
+  "NFormCompleteMultiPartUpload": {
+    "request": "CompleteMultiPartUploadRq",
+    "response": "CompleteMultiPartUploadRs"
+  },
+  "NFormAbortMultiPartUpload": {
+    "request": "AbortMultiPartUploadRq",
+    "response": "AbortMultiPartUploadRs"
+  },
+  "NGenSystemPackages": {
+    "request": "SystemPackagesRq",
+    "response": "SystemPackagesRs"
+  },
+  "NGenPackageChange": {
+    "request": "PackageChangeRq",
+    "response": "PackageChangeRs"
+  },
+  "NGenPackageSet": {
+    "request": "PackageSetRq",
+    "response": "PackageSetRs"
+  },
+  "NGenUploadImage": {
+    "request": "UploadImageRq",
+    "response": "UploadImageRs"
+  },
+  "NRuleGetMessageColumns": {
+    "request": "GetMessageColumnsRq",
+    "response": "GetMessageColumnsRs"
+  },
+  "NRuleGetCoverLetters": {
+    "request": "GetCoverLettersRq",
+    "response": "GetCoverLettersRs"
+  },
+  "NFormMentionUsers": {
+    "request": "MentionUsersRq",
+    "response": "MentionUsersRs"
+  },
+  "NGenGetAgentUsers": {
+    "request": "GetAgentUsersRq",
+    "response": "GetAgentUsersRs"
+  },
+  "NRuleListSkills": {
+    "request": "ListSkillsRq",
+    "response": "ListSkillsRs"
+  }
+}

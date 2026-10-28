@@ -5,10 +5,10 @@ import TextField from '@mui/material/TextField';
 import { util } from 'protobufjs';
 import { JSONTree } from 'react-json-tree';
 import { priority } from '@priority-software/priority-proto-api/lib/nform';
+import soapOperations from './soapOperations.json';
 import './App.css';
 
-const form = priority.netitems.form;
-const ngtw = priority.netitems.ngtw;
+const { form, ngtw, ngen, nrule } = priority.netitems;
 const version = "2.0.1";
 
 console.log(version);
@@ -17,7 +17,7 @@ const STORAGE_KEY = 'proto-decoder:type';
 const MONO = '"JetBrains Mono", "Cascadia Code", "Cascadia Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace';
 const HIGHLIGHT_LIMIT = 200000;
 
-const decoders = Object.entries({ ...form, ...ngtw })
+const decoders = Object.entries({ ...form, ...ngtw, ...ngen, ...nrule })
   .filter(([, type]) => typeof type.decode === 'function')
   .map(([label, type]) => ({
     label,
@@ -30,14 +30,37 @@ const decoders = Object.entries({ ...form, ...ngtw })
 const normalize = (text) =>
   text.trim().replace(/^["'`]+|["'`]+$/g, '').replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
 
-function decode(text, decoder) {
-  const input = normalize(text);
-  if (!input) return { status: 'empty' };
+// The payload is the text of the operation element's first child:
+// <s:Body><OpResponse><OpResult>…</OpResult></OpResponse> or <s:Body><Op><request>…</request></Op>.
+const SOAP_OPERATION = /<(?:[\w-]+:)?Body\b[^>]*>\s*<(?:[\w-]+:)?(\w+)[^>]*>\s*<(?:[\w-]+:)?\w+[^>]*>([^<]*)</;
+const SOAP_FAULT = /<faultstring[^>]*>([^<]*)</;
+
+function parseInput(text) {
+  if (!text.trimStart().startsWith('<')) return { payload: text };
+
+  const fault = text.match(SOAP_FAULT);
+  if (fault) return { xml: true, error: `SOAP fault: ${fault[1]}` };
+
+  const match = text.match(SOAP_OPERATION);
+  if (!match) return { xml: true, error: 'No base64 payload found in the XML' };
+
+  const [, element, payload] = match;
+  const isResponse = element.endsWith('Response');
+  const operation = isResponse ? element.slice(0, -'Response'.length) : element;
+  const typeName = soapOperations[operation]?.[isResponse ? 'response' : 'request'];
+  return { xml: true, payload, operation, isResponse, typeName };
+}
+
+function decode(input, decoder) {
+  if (input.error) return { status: 'error', message: input.error };
+
+  const payload = normalize(input.payload);
+  if (!payload) return { status: 'empty' };
 
   let bytes;
   try {
-    bytes = util.newBuffer(util.base64.length(input));
-    util.base64.decode(input, bytes, 0);
+    bytes = util.newBuffer(util.base64.length(payload));
+    util.base64.decode(payload, bytes, 0);
   } catch {
     return { status: 'error', message: 'Input is not valid base64' };
   }
@@ -87,8 +110,6 @@ const ICONS = {
   copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>,
   check: <path d="M20 6 9 17l-5-5" />,
   clear: <path d="M18 6 6 18M6 6l12 12" />,
-  maximize: <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />,
-  minimize: <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />,
   unfold: <path d="m7 15 5 5 5-5M7 9l5-5 5 5" />,
   fold: <path d="m7 20 5-5 5 5M7 4l5 5 5-5" />,
 };
@@ -155,8 +176,9 @@ const treeTheme = {
     base0D: '#8ab4f8',
   },
   tree: { margin: 0, backgroundColor: 'transparent', fontFamily: MONO, fontSize: 12, lineHeight: 1.55 },
-  arrowSign: { color: 'var(--faint)' },
-  nestedNodeItemString: ({ style }) => ({ style: { ...style, color: 'var(--faint)' } }),
+  arrow: ({ style }) => ({ style: { ...style, fontSize: '0.9em' } }),
+  arrowSign: { color: '#ffffff' },
+  nestedNodeItemString: ({ style }) => ({ style: { ...style, color: '#ccd2dc' } }),
 };
 
 const SAMPLE_BYTES = ['0A', '05', '46', '65', '74', '63', '68'];
@@ -180,18 +202,25 @@ function App() {
   const [decoderName, setDecoderName] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
   const [view, setView] = useState('tree');
   const [expandAll, setExpandAll] = useState(false);
-  const [maximized, setMaximized] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const decoder = decoders.find((d) => d.label === decoderName) || null;
-  const result = useMemo(() => decode(encodedText, decoder), [encodedText, decoder]);
+  const input = useMemo(() => parseInput(encodedText), [encodedText]);
+  const result = useMemo(() => decode(input, decoder), [input, decoder]);
   const json = useMemo(() => (result.data ? JSON.stringify(result.data, null, 2) : ''), [result]);
   const ok = result.status === 'ok';
+  const source = input.operation ? ` from ${input.operation} ${input.isResponse ? 'response' : 'request'}` : '';
 
-  const selectDecoder = (option) => {
-    const name = option ? option.label : '';
+  const selectDecoder = (name) => {
     setDecoderName(name);
     localStorage.setItem(STORAGE_KEY, name);
+  };
+
+  // Detect on input rather than on render, so a manual pick afterwards isn't overridden.
+  const handleInput = (text) => {
+    setEncodedText(text);
+    const { typeName } = parseInput(text);
+    if (typeName && decoders.some((d) => d.label === typeName)) selectDecoder(typeName);
   };
 
   const handleCopy = async () => {
@@ -201,10 +230,10 @@ function App() {
   };
 
   const status = {
-    empty: { tone: 'muted', text: 'Ready. Paste a base64 payload to decode it.' },
-    idle: { tone: 'warn', text: `${result.size} bytes. Choose a message type.` },
+    empty: { tone: 'muted', text: 'Ready. Paste base64 or a SOAP envelope to decode it.' },
+    idle: { tone: 'warn', text: `${result.size} bytes${source}. Choose a message type.` },
     error: { tone: 'error', text: result.message },
-    ok: { tone: 'ok', text: `Decoded ${result.size} bytes as ${decoder?.label}` },
+    ok: { tone: 'ok', text: `Decoded ${result.size} bytes${source} as ${decoder?.label}` },
   }[result.status];
 
   return (
@@ -221,7 +250,7 @@ function App() {
             size="small"
             options={decoders}
             value={decoder}
-            onChange={(event, option) => selectDecoder(option)}
+            onChange={(event, option) => selectDecoder(option ? option.label : '')}
             isOptionEqualToValue={(option, value) => option.label === value.label}
             autoHighlight
             openOnFocus
@@ -234,35 +263,35 @@ function App() {
             renderInput={(params) => <TextField {...params} placeholder="Message type…" />}
           />
 
-          <span className="toolbar-meta">api v{version}</span>
+          <div className={`paste-field ${result.status === 'error' ? 'invalid' : ''}`}>
+            <input
+              className="paste-input"
+              value={encodedText}
+              onChange={(event) => handleInput(event.target.value)}
+              onPaste={(event) => {
+                event.preventDefault();
+                handleInput(event.clipboardData.getData('text'));
+              }}
+              placeholder="Paste base64 or a SOAP envelope…"
+              spellCheck={false}
+              autoFocus
+            />
+            {encodedText && (
+              <>
+                {input.xml && <span className="paste-badge" title={input.operation}>xml</span>}
+                <span className="paste-meta">{encodedText.length.toLocaleString()} chars</span>
+                <button className="icon-btn" title="Clear" onClick={() => setEncodedText('')}>
+                  <Icon name="clear" />
+                </button>
+              </>
+            )}
+          </div>
         </header>
 
-        <main className={`workspace ${maximized ? 'maximized' : ''}`}>
-          {!maximized && (
-            <section className="pane input-pane">
-              <div className="pane-header">
-                <span className="pane-label"><b>01</b>Input</span>
-                <span className="pane-meta">{encodedText.length.toLocaleString()} chars</span>
-                <div className="pane-actions">
-                  <button className="icon-btn" title="Clear" onClick={() => setEncodedText('')} disabled={!encodedText}>
-                    <Icon name="clear" />
-                  </button>
-                </div>
-              </div>
-              <textarea
-                className="input"
-                value={encodedText}
-                onChange={(event) => setEncodedText(event.target.value)}
-                placeholder="Paste base64-encoded protobuf here…"
-                spellCheck={false}
-                autoFocus
-              />
-            </section>
-          )}
-
-          <section className="pane output-pane">
+        <main className="workspace">
+          <section className="pane">
             <div className="pane-header">
-              <span className="pane-label"><b>02</b>Output</span>
+              <span className="pane-label">Output</span>
               {ok && (
                 <span className="pane-meta">
                   <span className="type-chip">{decoder.label}</span>
@@ -285,14 +314,11 @@ function App() {
                 <button className={`icon-btn ${copied ? 'copied' : ''}`} title="Copy JSON" onClick={handleCopy} disabled={!ok}>
                   <Icon name={copied ? 'check' : 'copy'} />
                 </button>
-                <button className="icon-btn" title={maximized ? 'Restore' : 'Maximize'} onClick={() => setMaximized(!maximized)}>
-                  <Icon name={maximized ? 'minimize' : 'maximize'} />
-                </button>
               </div>
             </div>
 
             <div className="output">
-              {result.status === 'empty' && <EmptyState title="Nothing to decode yet" hint="Paste a payload from the Network tab. Quotes and line breaks are ignored." />}
+              {result.status === 'empty' && <EmptyState title="Nothing to decode yet" hint="Paste a base64 payload or a whole SOAP envelope from the Network tab. With SOAP, the message type is picked for you." />}
               {result.status === 'idle' && <EmptyState title={`${result.size} bytes ready`} hint="Choose a message type in the toolbar to decode them." />}
               {result.status === 'error' && <EmptyState tone="error" title="Couldn't decode" hint={result.message} />}
               {ok && view === 'tree' && (
@@ -316,7 +342,7 @@ function App() {
         <footer className={`statusbar tone-${status.tone}`}>
           <span className="status-dot" />
           <span className="status-text">{status.text}</span>
-          <span className="status-meta">{decoders.length} message types</span>
+          <span className="status-meta">api v{version} · {decoders.length} message types</span>
         </footer>
       </div>
     </ThemeProvider>

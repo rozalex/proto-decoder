@@ -74,9 +74,10 @@ button {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
-  padding: 8px 12px;
+  gap: 8px 12px;
+  padding: 8px;
   border-bottom: 1px solid var(--line);
   animation: rise 0.35s ease-out both;
 }
@@ -86,6 +87,7 @@ button {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  padding-left: 4px;
 }
 
 .brand-mark {
@@ -123,8 +125,70 @@ button {
 }
 
 .type-picker {
-  flex: 0 1 340px;
+  flex: 0 1 300px;
   min-width: 180px;
+}
+
+.paste-field {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--panel-2);
+  transition: border-color 0.15s;
+}
+
+.paste-field:hover {
+  border-color: var(--faint);
+}
+
+.paste-field:focus-within {
+  border-color: var(--accent);
+}
+
+.paste-field.invalid {
+  border-color: rgba(255, 122, 133, 0.55);
+}
+
+.paste-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: 12px var(--mono);
+  font-variant-ligatures: none;
+  text-overflow: ellipsis;
+}
+
+.paste-input::placeholder {
+  color: var(--faint);
+}
+
+.paste-meta {
+  color: var(--faint);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.paste-badge {
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  color: var(--key);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
 .kind {
@@ -145,28 +209,17 @@ button {
   color: var(--string);
 }
 
-.toolbar-meta {
-  margin-left: auto;
-  color: var(--faint);
-  white-space: nowrap;
-}
-
 /* Workspace */
 
 .workspace {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(260px, 2fr) 3fr;
-  gap: 8px;
+  display: flex;
   padding: 8px;
 }
 
-.workspace.maximized {
-  grid-template-columns: 1fr;
-}
-
 .pane {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -175,16 +228,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
-  transition: border-color 0.15s;
-  animation: rise 0.4s ease-out both;
-}
-
-.output-pane {
-  animation-delay: 0.06s;
-}
-
-.input-pane:focus-within {
-  border-color: rgba(255, 180, 84, 0.35);
+  animation: rise 0.4s ease-out 0.06s both;
 }
 
 .pane-header {
@@ -203,12 +247,6 @@ button {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
-}
-
-.pane-label b {
-  color: var(--accent);
-  font-weight: 500;
-  margin-right: 8px;
 }
 
 .pane-meta {
@@ -297,27 +335,6 @@ button {
 .segmented button.active {
   background: var(--panel-3);
   color: var(--accent);
-}
-
-/* Input */
-
-.input {
-  flex: 1;
-  min-height: 0;
-  margin: 0;
-  padding: 12px 14px;
-  border: 0;
-  outline: none;
-  resize: none;
-  background: transparent;
-  color: var(--text);
-  font: 12px/1.65 var(--mono);
-  font-variant-ligatures: none;
-  word-break: break-all;
-}
-
-.input::placeholder {
-  color: var(--faint);
 }
 
 /* Output */
@@ -475,20 +492,8 @@ button {
 
 /* Narrow panels (DevTools docked to the side) */
 
-@media (max-width: 720px) {
-  .workspace {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(110px, 35%) 1fr;
-  }
-
-  .workspace.maximized {
-    grid-template-rows: 1fr;
-  }
-}
-
 @media (max-width: 520px) {
   .brand-name,
-  .toolbar-meta,
   .status-meta,
   .type-chip {
     display: none;

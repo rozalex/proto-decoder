@@ -9,7 +9,7 @@ import soapOperations from './soapOperations.json';
 import './App.css';
 
 const { form, ngtw, ngen, nrule } = priority.netitems;
-const version = "2.0.1";
+const version = "2.0.2";
 
 console.log(version);
 

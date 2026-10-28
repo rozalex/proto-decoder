@@ -1,178 +1,323 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import './App.css';
-import TextareaAutosize from '@mui/material/TextareaAutosize';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import Snackbar from '@mui/material/Snackbar';
-import MuiAlert from '@mui/material/Alert';
+import TextField from '@mui/material/TextField';
 import { util } from 'protobufjs';
 import { JSONTree } from 'react-json-tree';
 import { priority } from '@priority-software/priority-proto-api/lib/nform';
+import './App.css';
 
 const form = priority.netitems.form;
 const ngtw = priority.netitems.ngtw;
-const version  = "1.0.68";
+const version = "2.0.1";
 
 console.log(version);
-const filterOptions = Object.entries({ ...form, ...ngtw }).map(([key, value]) => ({
-  label: key,
-  decode: value.decode
-}));
 
-const Alert = React.forwardRef(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
-});
+const STORAGE_KEY = 'proto-decoder:type';
+const MONO = '"JetBrains Mono", "Cascadia Code", "Cascadia Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace';
+const HIGHLIGHT_LIMIT = 200000;
 
-const darkTheme = createTheme({
+const decoders = Object.entries({ ...form, ...ngtw })
+  .filter(([, type]) => typeof type.decode === 'function')
+  .map(([label, type]) => ({
+    label,
+    type,
+    kind: label.endsWith('Rq') ? 'req' : label.endsWith('Rs') ? 'res' : null,
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+
+// Accept text copied straight from the Network tab: quotes, line breaks, base64url.
+const normalize = (text) =>
+  text.trim().replace(/^["'`]+|["'`]+$/g, '').replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+
+function decode(text, decoder) {
+  const input = normalize(text);
+  if (!input) return { status: 'empty' };
+
+  let bytes;
+  try {
+    bytes = util.newBuffer(util.base64.length(input));
+    util.base64.decode(input, bytes, 0);
+  } catch {
+    return { status: 'error', message: 'Input is not valid base64' };
+  }
+
+  if (!decoder) return { status: 'idle', size: bytes.length };
+
+  try {
+    const data = decoder.type.decode(bytes).toJSON();
+    return { status: 'ok', size: bytes.length, data };
+  } catch (err) {
+    return { status: 'error', size: bytes.length, message: `Not a valid ${decoder.label}: ${err.message}` };
+  }
+}
+
+const JSON_TOKEN = /("(?:\\.|[^"\\])*")(\s*:)?|\b(?:true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
+
+function highlightJson(text) {
+  const parts = [];
+  let last = 0;
+  for (const match of text.matchAll(JSON_TOKEN)) {
+    const [token, str, colon] = match;
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const kind = str ? (colon ? 'key' : 'str') : token === 'null' ? 'null' : token === 'true' || token === 'false' ? 'bool' : 'num';
+    parts.push(<span key={match.index} className={`j-${kind}`}>{str || token}</span>);
+    if (colon) parts.push(colon);
+    last = match.index + token.length;
+  }
+  parts.push(text.slice(last));
+  return parts;
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // DevTools panels often block the async clipboard API.
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    el.remove();
+  }
+}
+
+const ICONS = {
+  copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>,
+  check: <path d="M20 6 9 17l-5-5" />,
+  clear: <path d="M18 6 6 18M6 6l12 12" />,
+  maximize: <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />,
+  minimize: <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />,
+  unfold: <path d="m7 15 5 5 5-5M7 9l5-5 5 5" />,
+  fold: <path d="m7 20 5-5 5 5M7 4l5 5 5-5" />,
+};
+
+const Icon = ({ name }) => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {ICONS[name]}
+  </svg>
+);
+
+const theme = createTheme({
   palette: {
     mode: 'dark',
+    primary: { main: '#ffb454' },
+    background: { default: '#0e1014', paper: '#171a21' },
+    text: { primary: '#d5d9e0', secondary: '#7f8794' },
+    divider: '#262b35',
   },
+  typography: { fontFamily: MONO, fontSize: 12 },
+  shape: { borderRadius: 6 },
   components: {
-    MuiInputBase: {
-      styleOverrides: {
-        root: {
-          color: '#fff',
-        },
-      },
-    },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          color: '#fff',
-          borderColor: '#999',
-        },
-      },
-    },
-    MuiFormLabel: {
-      styleOverrides: {
-        root: {
-          color: '#fff',
+          backgroundColor: 'var(--panel-2)',
+          fontSize: 12,
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--line-strong)' },
+          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--faint)' },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--accent)', borderWidth: 1 },
         },
       },
     },
     MuiAutocomplete: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#333',
+          marginTop: 4,
+          border: '1px solid var(--line-strong)',
+          boxShadow: '0 16px 40px rgba(0, 0, 0, 0.55)',
+          backgroundImage: 'none',
         },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        contained: {
-          backgroundColor: '#666',
-          color: '#fff',
-          '&:hover': {
-            backgroundColor: '#888',
-          },
+        listbox: { padding: 4, maxHeight: 340 },
+        option: {
+          fontSize: 12,
+          minHeight: '28px !important',
+          borderRadius: 4,
+          justifyContent: 'space-between !important',
+          '&.Mui-focused': { backgroundColor: 'var(--panel-3) !important' },
+          '&[aria-selected="true"]': { color: 'var(--accent)' },
         },
-      },
-    },
-    MuiAlert: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#333',
-          color: '#fff',
-        },
+        noOptions: { fontSize: 12, color: 'var(--muted)' },
       },
     },
   },
 });
 
+const treeTheme = {
+  extend: {
+    base00: 'transparent',
+    base03: '#4b5262',
+    base07: '#d5d9e0',
+    base08: '#ff7a85',
+    base09: '#ffb454',
+    base0B: '#a6da7c',
+    base0D: '#8ab4f8',
+  },
+  tree: { margin: 0, backgroundColor: 'transparent', fontFamily: MONO, fontSize: 12, lineHeight: 1.55 },
+  arrowSign: { color: 'var(--faint)' },
+  nestedNodeItemString: ({ style }) => ({ style: { ...style, color: 'var(--faint)' } }),
+};
+
+const SAMPLE_BYTES = ['0A', '05', '46', '65', '74', '63', '68'];
+
+function EmptyState({ title, hint, tone }) {
+  return (
+    <div className={`empty ${tone || ''}`}>
+      <div className="byte-strip" aria-hidden="true">
+        {SAMPLE_BYTES.map((byte, i) => (
+          <span key={i} style={{ animationDelay: `${i * 140}ms` }}>{byte}</span>
+        ))}
+      </div>
+      <div className="empty-title">{title}</div>
+      {hint && <div className="empty-hint">{hint}</div>}
+    </div>
+  );
+}
+
 function App() {
-  const [encodedText, setEncodedText] = useState("");
-  const [decoder, setDecoder] = useState("");
-  const [alertState, setAlertState] = useState(false);
-  const [alertText, setAlertText] = useState("");
-  const [alertType, setAlertType] = useState("");
-  const [json, setJSON] = useState();
-  const [isExpanded, setIsExpanded] = useState(false); // Track expansion state
+  const [encodedText, setEncodedText] = useState('');
+  const [decoderName, setDecoderName] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
+  const [view, setView] = useState('tree');
+  const [expandAll, setExpandAll] = useState(false);
+  const [maximized, setMaximized] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const decodeText = () => {
-    try {
-      const buf64 = util.newBuffer(util.base64.length(encodedText));
-      util.base64.decode(encodedText, buf64, 0);
-      const text = decoder.decode(buf64);
-      console.log(text);
+  const decoder = decoders.find((d) => d.label === decoderName) || null;
+  const result = useMemo(() => decode(encodedText, decoder), [encodedText, decoder]);
+  const json = useMemo(() => (result.data ? JSON.stringify(result.data, null, 2) : ''), [result]);
+  const ok = result.status === 'ok';
 
-      setJSON(text);
-      setAlertType("success");
-      setAlertText("Decoded successfully");
-    } catch (err) {
-      setAlertType("error");
-      setAlertText("Error decoding, make sure you have selected the correct decoder");
-    }
-
-    setAlertState(true);
+  const selectDecoder = (option) => {
+    const name = option ? option.label : '';
+    setDecoderName(name);
+    localStorage.setItem(STORAGE_KEY, name);
   };
 
-  const toggleExpansion = () => {
-    setIsExpanded(!isExpanded);
+  const handleCopy = async () => {
+    await copyText(json);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
   };
+
+  const status = {
+    empty: { tone: 'muted', text: 'Ready. Paste a base64 payload to decode it.' },
+    idle: { tone: 'warn', text: `${result.size} bytes. Choose a message type.` },
+    error: { tone: 'error', text: result.message },
+    ok: { tone: 'ok', text: `Decoded ${result.size} bytes as ${decoder?.label}` },
+  }[result.status];
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <div className={`App ${isExpanded ? "expanded" : ""}`}>
-        <main className="App-content">
-          {!isExpanded && (
-            <div className="input-section">
-              <div className="input-group">
-                <Autocomplete
-                  disablePortal
-                  onChange={(event, value) => { setDecoder(value) }}
-                  options={filterOptions}
-                  sx={{ width: "50%" }} // Set the width of the Autocomplete component
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Decoder"
-                      variant="outlined"
-                    />
-                  )}
-                />
-                <Button
-                  variant="contained"
-                  onClick={decodeText}
-                  disabled={!decoder}
-                >
-                  Decode
-                </Button>
-              </div>
+    <ThemeProvider theme={theme}>
+      <div className="app">
+        <header className="toolbar">
+          <div className="brand">
+            <span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>
+            <span className="brand-name"><span>proto</span>decoder</span>
+          </div>
 
-              <TextareaAutosize
-                className="textarea"
-                onChange={ev => setEncodedText(ev.target.value)}
+          <Autocomplete
+            className="type-picker"
+            size="small"
+            options={decoders}
+            value={decoder}
+            onChange={(event, option) => selectDecoder(option)}
+            isOptionEqualToValue={(option, value) => option.label === value.label}
+            autoHighlight
+            openOnFocus
+            renderOption={(props, option) => (
+              <li {...props} key={option.label}>
+                <span>{option.label}</span>
+                {option.kind && <span className={`kind kind-${option.kind}`}>{option.kind}</span>}
+              </li>
+            )}
+            renderInput={(params) => <TextField {...params} placeholder="Message type…" />}
+          />
+
+          <span className="toolbar-meta">api v{version}</span>
+        </header>
+
+        <main className={`workspace ${maximized ? 'maximized' : ''}`}>
+          {!maximized && (
+            <section className="pane input-pane">
+              <div className="pane-header">
+                <span className="pane-label"><b>01</b>Input</span>
+                <span className="pane-meta">{encodedText.length.toLocaleString()} chars</span>
+                <div className="pane-actions">
+                  <button className="icon-btn" title="Clear" onClick={() => setEncodedText('')} disabled={!encodedText}>
+                    <Icon name="clear" />
+                  </button>
+                </div>
+              </div>
+              <textarea
+                className="input"
                 value={encodedText}
-                placeholder="Enter encoded text..."
+                onChange={(event) => setEncodedText(event.target.value)}
+                placeholder="Paste base64-encoded protobuf here…"
+                spellCheck={false}
+                autoFocus
               />
-            </div>
+            </section>
           )}
 
-          <div className={`result-section ${isExpanded ? "expanded" : ""}`}>
-            <div className={`result ${isExpanded ? "expanded" : ""}`}>
-              <Button onClick={toggleExpansion}>
-                {isExpanded ? 'Collapse' : 'Expand'}
-              </Button>
-              <pre id="preelement" >
-                {JSON.stringify(json, null, 2)}
-              </pre>
+          <section className="pane output-pane">
+            <div className="pane-header">
+              <span className="pane-label"><b>02</b>Output</span>
+              {ok && (
+                <span className="pane-meta">
+                  <span className="type-chip">{decoder.label}</span>
+                  {Object.keys(result.data).length} fields
+                </span>
+              )}
+              <div className="pane-actions">
+                <div className="segmented" role="tablist">
+                  {['tree', 'json'].map((v) => (
+                    <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'active' : ''} onClick={() => setView(v)}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
+                {view === 'tree' && (
+                  <button className="icon-btn" title={expandAll ? 'Collapse all' : 'Expand all'} onClick={() => setExpandAll(!expandAll)} disabled={!ok}>
+                    <Icon name={expandAll ? 'fold' : 'unfold'} />
+                  </button>
+                )}
+                <button className={`icon-btn ${copied ? 'copied' : ''}`} title="Copy JSON" onClick={handleCopy} disabled={!ok}>
+                  <Icon name={copied ? 'check' : 'copy'} />
+                </button>
+                <button className="icon-btn" title={maximized ? 'Restore' : 'Maximize'} onClick={() => setMaximized(!maximized)}>
+                  <Icon name={maximized ? 'minimize' : 'maximize'} />
+                </button>
+              </div>
             </div>
 
-            <div className="tree">
-              {json && <JSONTree data={json} />}
+            <div className="output">
+              {result.status === 'empty' && <EmptyState title="Nothing to decode yet" hint="Paste a payload from the Network tab. Quotes and line breaks are ignored." />}
+              {result.status === 'idle' && <EmptyState title={`${result.size} bytes ready`} hint="Choose a message type in the toolbar to decode them." />}
+              {result.status === 'error' && <EmptyState tone="error" title="Couldn't decode" hint={result.message} />}
+              {ok && view === 'tree' && (
+                <div className="reveal">
+                  <JSONTree
+                    key={String(expandAll)}
+                    data={result.data}
+                    theme={treeTheme}
+                    hideRoot
+                    shouldExpandNodeInitially={(keyPath, data, level) => expandAll || level < 2}
+                  />
+                </div>
+              )}
+              {ok && view === 'json' && (
+                <pre className="reveal json">{json.length > HIGHLIGHT_LIMIT ? json : highlightJson(json)}</pre>
+              )}
             </div>
-
-            <Snackbar
-              open={alertState}
-              autoHideDuration={3000}
-              onClose={() => { setAlertState(false) }}
-            >
-              <Alert severity={alertType}>{alertText}</Alert>
-            </Snackbar>
-          </div>
+          </section>
         </main>
+
+        <footer className={`statusbar tone-${status.tone}`}>
+          <span className="status-dot" />
+          <span className="status-text">{status.text}</span>
+          <span className="status-meta">{decoders.length} message types</span>
+        </footer>
       </div>
     </ThemeProvider>
   );
